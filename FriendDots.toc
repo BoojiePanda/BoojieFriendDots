@@ -1,0 +1,9 @@
+## Interface: 120100
+## Title: |cffA855F7FriendDots|r
+## Author: SilverRavyn
+## Notes: Simple friend dots and login/logout notifications.
+## Version: 0.3.0
+## SavedVariables: FriendDotsDB
+## OptionalDeps: ElvUI
+
+FriendDots.lua
