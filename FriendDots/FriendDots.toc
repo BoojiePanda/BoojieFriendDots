@@ -1,0 +1,8 @@
+## Interface: 120100
+## Title: FriendDots
+## Notes: Simple friend dots and login/logout notifications.
+## Version: 0.3.0
+## SavedVariables: FriendDotsDB
+## OptionalDeps: ElvUI
+
+FriendDots.lua
