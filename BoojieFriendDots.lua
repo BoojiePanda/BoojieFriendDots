@@ -32,8 +32,7 @@ local chatEditBox
 local colorSwatch
 
 local function CopyDefaults()
-    BoojieFriendDotsDB = BoojieFriendDotsDB or FriendDotsDB or {}
-    FriendDotsDB = BoojieFriendDotsDB
+    BoojieFriendDotsDB = BoojieFriendDotsDB or {}
     BoojieFriendDotsDB.color = BoojieFriendDotsDB.color or {}
 
     if BoojieFriendDotsDB.useClassColors == nil then
@@ -699,8 +698,6 @@ end
 
 SLASH_BOOJIEFRIENDDOTS1 = "/boojiefrienddots"
 SLASH_BOOJIEFRIENDDOTS2 = "/bfd"
-SLASH_BOOJIEFRIENDDOTS3 = "/frienddots"
-SLASH_BOOJIEFRIENDDOTS4 = "/fd"
 SlashCmdList.BOOJIEFRIENDDOTS = ShowSettings
 
 local eventFrame = CreateFrame("Frame")

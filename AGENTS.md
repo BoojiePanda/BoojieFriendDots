@@ -5,7 +5,7 @@
 BoojieFriendDots is a lightweight World of Warcraft addon. The active source lives at the repository root:
 
 - `BoojieFriendDots.lua` contains runtime logic, settings UI, friend-status notifications, and minimap/world-map dot rendering.
-- `BoojieFriendDots.toc` declares addon metadata, the saved-variable tables (`BoojieFriendDotsDB` and legacy `FriendDotsDB`), optional dependencies, and load order.
+- `BoojieFriendDots.toc` declares addon metadata, the saved-variable table (`BoojieFriendDotsDB`), optional dependencies, and load order.
 - `BoojieFriendDotsDot.tga` is the rendered marker texture.
 
 Packaged release artifacts may lag behind the root files. Make changes to the root sources first; refresh packaged copies only when preparing a release.
@@ -15,7 +15,7 @@ Packaged release artifacts may lag behind the root files. Make changes to the ro
 There is no compilation step or automated test suite. Install this directory under `_retail_/Interface/AddOns/BoojieFriendDots`, start WoW, and enable the addon in the character-selection addon list.
 
 - `/reload` reloads the UI after Lua or TOC edits.
-- `/boojiefrienddots` opens the addon settings window for manual checks; `/frienddots` remains a compatibility alias.
+- `/boojiefrienddots` opens the addon settings window for manual checks.
 - `zip -r BoojieFriendDots-<version>.zip BoojieFriendDots/` creates a release archive after synchronizing the staging directory.
 
 Before packaging, update `## Version` in `BoojieFriendDots.toc` and ensure `## Interface` matches the supported WoW client build.
