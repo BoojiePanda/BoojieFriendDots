@@ -1,5 +1,5 @@
 ## Interface: 120100
-## Title: |cffffe5edBoojieFriendDots|r
+## Title: |cFFFFE5EDBoojieFriendDots|r
 ## Author: SilverRavyn
 ## Notes: Simple friend dots and login/logout notifications.
 ## Version: 0.3.0
