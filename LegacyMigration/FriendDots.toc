@@ -1,0 +1,7 @@
+## Interface: 120100
+## Title: BoojieFriendDots Legacy Settings
+## Author: SilverRavyn
+## Notes: Loads existing FriendDots settings for migration to BoojieFriendDots.
+## Version: 0.3.0
+## SavedVariables: FriendDotsDB
+## LoadOnDemand: 1
