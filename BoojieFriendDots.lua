@@ -1,5 +1,5 @@
 local ADDON_NAME = ...
-local DOT_TEXTURE = "Interface\\AddOns\\FriendDots\\Dot.tga"
+local DOT_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsDot.tga"
 local UPDATE_INTERVAL = 0.10
 local MIN_DOT_SIZE = 4
 local MAX_DOT_SIZE = 40
@@ -32,33 +32,34 @@ local chatEditBox
 local colorSwatch
 
 local function CopyDefaults()
-    FriendDotsDB = FriendDotsDB or {}
-    FriendDotsDB.color = FriendDotsDB.color or {}
+    BoojieFriendDotsDB = BoojieFriendDotsDB or FriendDotsDB or {}
+    FriendDotsDB = BoojieFriendDotsDB
+    BoojieFriendDotsDB.color = BoojieFriendDotsDB.color or {}
 
-    if FriendDotsDB.useClassColors == nil then
-        FriendDotsDB.useClassColors = defaults.useClassColors
+    if BoojieFriendDotsDB.useClassColors == nil then
+        BoojieFriendDotsDB.useClassColors = defaults.useClassColors
     end
-    if type(FriendDotsDB.color.r) ~= "number" then
-        FriendDotsDB.color.r = defaults.color.r
+    if type(BoojieFriendDotsDB.color.r) ~= "number" then
+        BoojieFriendDotsDB.color.r = defaults.color.r
     end
-    if type(FriendDotsDB.color.g) ~= "number" then
-        FriendDotsDB.color.g = defaults.color.g
+    if type(BoojieFriendDotsDB.color.g) ~= "number" then
+        BoojieFriendDotsDB.color.g = defaults.color.g
     end
-    if type(FriendDotsDB.color.b) ~= "number" then
-        FriendDotsDB.color.b = defaults.color.b
+    if type(BoojieFriendDotsDB.color.b) ~= "number" then
+        BoojieFriendDotsDB.color.b = defaults.color.b
     end
-    if type(FriendDotsDB.size) ~= "number" then
-        FriendDotsDB.size = defaults.size
+    if type(BoojieFriendDotsDB.size) ~= "number" then
+        BoojieFriendDotsDB.size = defaults.size
     end
-    if type(FriendDotsDB.chatWindow) ~= "string" or FriendDotsDB.chatWindow == "" then
-        FriendDotsDB.chatWindow = defaults.chatWindow
+    if type(BoojieFriendDotsDB.chatWindow) ~= "string" or BoojieFriendDotsDB.chatWindow == "" then
+        BoojieFriendDotsDB.chatWindow = defaults.chatWindow
     end
-    if FriendDotsDB.showMinimapButton == nil then
-        FriendDotsDB.showMinimapButton = defaults.showMinimapButton
+    if BoojieFriendDotsDB.showMinimapButton == nil then
+        BoojieFriendDotsDB.showMinimapButton = defaults.showMinimapButton
     end
 
-    FriendDotsDB.settingsPosition = FriendDotsDB.settingsPosition or {}
-    local position = FriendDotsDB.settingsPosition
+    BoojieFriendDotsDB.settingsPosition = BoojieFriendDotsDB.settingsPosition or {}
+    local position = BoojieFriendDotsDB.settingsPosition
     if type(position.point) ~= "string" then
         position.point = defaults.settingsPosition.point
     end
@@ -72,8 +73,8 @@ local function CopyDefaults()
         position.y = defaults.settingsPosition.y
     end
 
-    FriendDotsDB.size = math.max(MIN_DOT_SIZE, math.min(MAX_DOT_SIZE, math.floor(FriendDotsDB.size + 0.5)))
-    db = FriendDotsDB
+    BoojieFriendDotsDB.size = math.max(MIN_DOT_SIZE, math.min(MAX_DOT_SIZE, math.floor(BoojieFriendDotsDB.size + 0.5)))
+    db = BoojieFriendDotsDB
 end
 
 local function Trim(text)
@@ -102,9 +103,9 @@ local function AddChatMessage(text)
     local frame = FindChatFrame(db.chatWindow)
     if not frame then
         frame = ChatFrame1
-        frame:AddMessage('|cff66ccffFriendDots:|r Chat window "' .. db.chatWindow .. '" was not found. Using General.')
+        frame:AddMessage('|cff66ccffBoojieFriendDots:|r Chat window "' .. db.chatWindow .. '" was not found. Using General.')
     end
-    frame:AddMessage("|cff66ccffFriendDots:|r " .. text)
+    frame:AddMessage("|cff66ccffBoojieFriendDots:|r " .. text)
 end
 
 local function SendNotice(name, online)
@@ -508,7 +509,7 @@ local function ApplyElvUISkin(frame, classCheck, colorButton, slider, sizeBox, c
 end
 
 local function CreateSettingsFrame()
-    local frame = CreateFrame("Frame", "FriendDotsSettingsFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "BoojieFriendDotsSettingsFrame", UIParent, "BasicFrameTemplateWithInset")
     frame:SetSize(430, 350)
     frame:SetFrameStrata("DIALOG")
     frame:SetClampedToScreen(true)
@@ -533,7 +534,7 @@ local function CreateSettingsFrame()
     )
 
     frame:Hide()
-    frame.TitleText:SetText("FriendDots")
+    frame.TitleText:SetText("BoojieFriendDots")
     settingsFrame = frame
 
     local classCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
@@ -559,7 +560,7 @@ local function CreateSettingsFrame()
     colorSwatch = swatch
 
     CreateLabel(frame, "Dot size", 22, -132)
-    local slider = CreateFrame("Slider", "FriendDotsSizeSlider", frame, "OptionsSliderTemplate")
+    local slider = CreateFrame("Slider", "BoojieFriendDotsSizeSlider", frame, "OptionsSliderTemplate")
     slider:SetPoint("TOPLEFT", 88, -126)
     slider:SetWidth(220)
     slider:SetMinMaxValues(MIN_DOT_SIZE, MAX_DOT_SIZE)
@@ -620,7 +621,7 @@ local function CreateSettingsFrame()
 
     local commandLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     commandLabel:SetPoint("TOPLEFT", 22, -278)
-    commandLabel:SetText("Open settings: /frienddots or /fd")
+    commandLabel:SetText("Open settings: /boojiefrienddots or /bfd")
 
     ApplyElvUISkin(frame, classCheck, colorButton, slider, sizeBox, chatBox, minimapCheck)
 end
@@ -653,24 +654,24 @@ local function RegisterBlizzardSettings()
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("FriendDots")
+    title:SetText("BoojieFriendDots")
 
     local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
-    description:SetText("FriendDots uses its own movable settings window.")
+    description:SetText("BoojieFriendDots uses its own movable settings window.")
 
     local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     button:SetSize(190, 26)
     button:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -16)
-    button:SetText("Open FriendDots Settings")
+    button:SetText("Open BoojieFriendDots Settings")
     button:SetScript("OnClick", ShowSettings)
 
-    local category = Settings.RegisterCanvasLayoutCategory(panel, "FriendDots")
+    local category = Settings.RegisterCanvasLayoutCategory(panel, "BoojieFriendDots")
     Settings.RegisterAddOnCategory(category)
 end
 
 local function CreateMinimapButton()
-    local button = CreateFrame("Button", "FriendDotsMinimapButton", Minimap)
+    local button = CreateFrame("Button", "BoojieFriendDotsMinimapButton", Minimap)
     button:SetSize(30, 30)
     button:SetPoint("TOPLEFT", Minimap, "TOPLEFT", -2, 2)
     button:RegisterForClicks("LeftButtonUp")
@@ -686,7 +687,7 @@ local function CreateMinimapButton()
     button:SetScript("OnClick", ToggleSettings)
     button:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-        GameTooltip:SetText("FriendDots")
+        GameTooltip:SetText("BoojieFriendDots")
         GameTooltip:AddLine("Click to open settings.", 1, 1, 1)
         GameTooltip:Show()
     end)
@@ -696,9 +697,11 @@ local function CreateMinimapButton()
     UpdateMinimapButtonVisibility()
 end
 
-SLASH_FRIENDDOTS1 = "/frienddots"
-SLASH_FRIENDDOTS2 = "/fd"
-SlashCmdList.FRIENDDOTS = ShowSettings
+SLASH_BOOJIEFRIENDDOTS1 = "/boojiefrienddots"
+SLASH_BOOJIEFRIENDDOTS2 = "/bfd"
+SLASH_BOOJIEFRIENDDOTS3 = "/frienddots"
+SLASH_BOOJIEFRIENDDOTS4 = "/fd"
+SlashCmdList.BOOJIEFRIENDDOTS = ShowSettings
 
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
