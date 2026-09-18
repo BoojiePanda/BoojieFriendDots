@@ -1,8 +1,18 @@
 local ADDON_NAME = ...
-local DOT_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsDot.tga"
+local DOT_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsMarker.tga"
+local ADDON_ICON_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsDot.tga"
 local UPDATE_INTERVAL = 0.10
 local MIN_DOT_SIZE = 4
 local MAX_DOT_SIZE = 40
+
+local function GetMetadata(field)
+    if C_AddOns and C_AddOns.GetAddOnMetadata then
+        return C_AddOns.GetAddOnMetadata(ADDON_NAME, field)
+    end
+    if GetAddOnMetadata then
+        return GetAddOnMetadata(ADDON_NAME, field)
+    end
+end
 
 local defaults = {
     useClassColors = true,
@@ -10,6 +20,7 @@ local defaults = {
     size = 14,
     chatWindow = "General",
     showMinimapButton = true,
+    minimapAngle = -135,
     settingsPosition = {
         point = "CENTER",
         relativePoint = "CENTER",
@@ -55,6 +66,9 @@ local function CopyDefaults()
     end
     if BoojieFriendDotsDB.showMinimapButton == nil then
         BoojieFriendDotsDB.showMinimapButton = defaults.showMinimapButton
+    end
+    if type(BoojieFriendDotsDB.minimapAngle) ~= "number" then
+        BoojieFriendDotsDB.minimapAngle = defaults.minimapAngle
     end
 
     BoojieFriendDotsDB.settingsPosition = BoojieFriendDotsDB.settingsPosition or {}
@@ -509,12 +523,17 @@ end
 
 local function CreateSettingsFrame()
     local frame = CreateFrame("Frame", "BoojieFriendDotsSettingsFrame", UIParent, "BasicFrameTemplateWithInset")
+    UISpecialFrames[#UISpecialFrames + 1] = "BoojieFriendDotsSettingsFrame"
     frame:SetSize(430, 350)
-    frame:SetFrameStrata("DIALOG")
+    frame:SetFrameStrata("FULLSCREEN_DIALOG")
+    frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:RegisterForDrag("LeftButton")
+    frame:SetScript("OnShow", function(self)
+        self:Raise()
+    end)
     frame:SetScript("OnDragStart", function(self)
         self:StartMoving()
     end)
@@ -533,7 +552,7 @@ local function CreateSettingsFrame()
     )
 
     frame:Hide()
-    frame.TitleText:SetText("BoojieFriendDots")
+    frame.TitleText:SetText("Boojie Friend Dots")
     settingsFrame = frame
 
     local classCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
@@ -651,41 +670,109 @@ local function RegisterBlizzardSettings()
 
     local panel = CreateFrame("Frame")
 
+    local icon = panel:CreateTexture(nil, "ARTWORK")
+    icon:SetSize(128, 128)
+    icon:SetPoint("TOP", 0, -28)
+    icon:SetTexture("Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsSettingsIcon.png")
+
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("TOPLEFT", 16, -16)
-    title:SetText("BoojieFriendDots")
+    title:SetPoint("TOP", icon, "BOTTOM", 0, -12)
+    title:SetText("Boojie Friend Dots")
 
     local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    description:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -10)
-    description:SetText("BoojieFriendDots uses its own movable settings window.")
+    description:SetPoint("TOP", title, "BOTTOM", 0, -10)
+    description:SetText("Open Boojie Friend Dots from any chat window with /boojiefrienddots.")
 
-    local button = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
+    local button = CreateFrame("Button", nil, panel, "BackdropTemplate")
     button:SetSize(190, 26)
-    button:SetPoint("TOPLEFT", description, "BOTTOMLEFT", 0, -16)
-    button:SetText("Open BoojieFriendDots Settings")
+    button:SetPoint("TOP", description, "BOTTOM", 0, -16)
+    button:SetBackdrop({
+        bgFile = "Interface\\Buttons\\WHITE8X8",
+        edgeFile = "Interface\\Buttons\\WHITE8X8",
+        edgeSize = 1,
+    })
+    button:SetBackdropColor(0.055, 0.055, 0.065, 0.96)
+    button:SetBackdropBorderColor(0.45, 0.45, 0.48, 1)
+    local buttonText = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    buttonText:SetPoint("CENTER")
+    buttonText:SetText("Open Boojie Friend Dots")
+    button:SetScript("OnEnter", function(self)
+        self:SetBackdropColor(0.10, 0.10, 0.12, 1)
+    end)
+    button:SetScript("OnLeave", function(self)
+        self:SetBackdropColor(0.055, 0.055, 0.065, 0.96)
+    end)
     button:SetScript("OnClick", ShowSettings)
 
-    local category = Settings.RegisterCanvasLayoutCategory(panel, "BoojieFriendDots")
+    local addonDescription = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+    addonDescription:SetPoint("TOP", button, "BOTTOM", 0, -24)
+    addonDescription:SetWidth(420)
+    addonDescription:SetJustifyH("CENTER")
+    addonDescription:SetText(GetMetadata("Notes") or "")
+
+    local author = panel:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    author:SetPoint("BOTTOM", 0, 24)
+    author:SetText("by " .. (GetMetadata("Author") or "SilverRavyn"))
+
+    local category = Settings.RegisterCanvasLayoutCategory(panel, "Boojie Friend Dots")
     Settings.RegisterAddOnCategory(category)
 end
 
 local function CreateMinimapButton()
     local button = CreateFrame("Button", "BoojieFriendDotsMinimapButton", Minimap)
     button:SetSize(30, 30)
-    button:SetPoint("TOPLEFT", Minimap, "TOPLEFT", -2, 2)
     button:RegisterForClicks("LeftButtonUp")
+    button:RegisterForDrag("LeftButton")
+    local function Position()
+        local radius = (Minimap:GetWidth() * 0.5) + 10
+        local radians = math.rad(db.minimapAngle)
+        button:ClearAllPoints()
+        button:SetPoint("CENTER", Minimap, "CENTER", math.cos(radians) * radius, math.sin(radians) * radius)
+    end
+    Position()
 
     local icon = button:CreateTexture(nil, "ARTWORK")
     icon:SetSize(18, 18)
     icon:SetPoint("CENTER")
-    icon:SetTexture(DOT_TEXTURE)
-    icon:SetVertexColor(0.20, 0.85, 1.00, 1)
+    icon:SetTexture(ADDON_ICON_TEXTURE)
     button.icon = icon
 
+    button:SetSize(31, 31); button:SetFrameStrata("MEDIUM"); button:SetFrameLevel(8)
+    button:SetHitRectInsets(-6, -6, -6, -6)
+    local background = button:CreateTexture(nil, "BACKGROUND")
+    background:SetTexture(136467); background:SetSize(24, 24); background:SetPoint("CENTER")
+    local border = button:CreateTexture(nil, "OVERLAY")
+    border:SetTexture(136430); border:SetSize(50, 50); border:SetPoint("TOPLEFT")
+    button.background, button.border = background, border
+    local function SyncPresentation()
+        local onMinimap = button:GetParent() == Minimap
+        background:SetShown(onMinimap)
+        border:SetShown(onMinimap)
+    end
+    SyncPresentation()
+    hooksecurefunc(button, "SetParent", SyncPresentation)
+
     button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-    button:SetScript("OnClick", ToggleSettings)
+    button:SetScript("OnClick", function() if not button._bcsJustDragged then ToggleSettings() end end)
+    button:SetScript("OnDragStart", function(self)
+        self:SetScript("OnUpdate", function()
+            local cursorX, cursorY = GetCursorPosition()
+            local scale = Minimap:GetEffectiveScale()
+            local centerX, centerY = Minimap:GetCenter()
+            if centerX and centerY then
+                db.minimapAngle = math.deg(math.atan2((cursorY / scale) - centerY, (cursorX / scale) - centerX))
+                Position()
+            end
+        end)
+    end)
+    button:SetScript("OnDragStop", function(self)
+        self:SetScript("OnUpdate", nil); self._bcsJustDragged = true
+        Position()
+        C_Timer.After(0, function() self._bcsJustDragged = nil end)
+    end)
     button:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_LEFT")
+        local mapX = Minimap:GetCenter()
+        GameTooltip:SetOwner(Minimap, mapX and mapX < (UIParent:GetWidth() * 0.5) and "ANCHOR_RIGHT" or "ANCHOR_LEFT")
         GameTooltip:SetText("BoojieFriendDots")
         GameTooltip:AddLine("Click to open settings.", 1, 1, 1)
         GameTooltip:Show()
@@ -700,6 +787,9 @@ SLASH_BOOJIEFRIENDDOTS1 = "/boojiefrienddots"
 SLASH_BOOJIEFRIENDDOTS2 = "/bfd"
 SlashCmdList.BOOJIEFRIENDDOTS = ShowSettings
 
+SLASH_BOOJIERELOAD1 = SLASH_BOOJIERELOAD1 or "/rl"
+SlashCmdList.BOOJIERELOAD = SlashCmdList.BOOJIERELOAD or ReloadUI
+
 local eventFrame = CreateFrame("Frame")
 eventFrame:RegisterEvent("ADDON_LOADED")
 eventFrame:RegisterEvent("PLAYER_LOGIN")
@@ -708,11 +798,30 @@ eventFrame:RegisterEvent("BN_FRIEND_INFO_CHANGED")
 eventFrame:RegisterEvent("BN_FRIEND_ACCOUNT_ONLINE")
 eventFrame:RegisterEvent("BN_FRIEND_ACCOUNT_OFFLINE")
 eventFrame:RegisterEvent("BN_FRIEND_LIST_SIZE_CHANGED")
+eventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
+
+local elapsed = 0
+local function DotUpdate(_, delta)
+    if not db then return end
+    elapsed = elapsed + delta
+    if elapsed >= UPDATE_INTERVAL then
+        elapsed = 0
+        RefreshDots()
+    end
+end
+
+local function UpdatePolling()
+    if not db then return end
+    elapsed = 0
+    eventFrame:SetScript("OnUpdate", IsInGroup() and DotUpdate or nil)
+    if not IsInGroup() then RefreshDots() end
+end
 
 eventFrame:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" then
         if arg1 == ADDON_NAME then
             CopyDefaults()
+            eventFrame:UnregisterEvent("ADDON_LOADED")
         end
     elseif event == "PLAYER_LOGIN" then
         if not db then
@@ -722,24 +831,14 @@ eventFrame:SetScript("OnEvent", function(_, event, arg1)
         bnetSnapshot = BuildBNetSnapshot()
         CreateMinimapButton()
         RegisterBlizzardSettings()
+        UpdatePolling()
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        UpdatePolling()
     elseif event == "FRIENDLIST_UPDATE" then
         UpdateWoWFriends(true)
     elseif event == "BN_FRIEND_LIST_SIZE_CHANGED" then
         UpdateBNetFriends(false)
     else
         UpdateBNetFriends(true)
-    end
-end)
-
-local elapsed = 0
-eventFrame:SetScript("OnUpdate", function(_, delta)
-    if not db then
-        return
-    end
-
-    elapsed = elapsed + delta
-    if elapsed >= UPDATE_INTERVAL then
-        elapsed = 0
-        RefreshDots()
     end
 end)
