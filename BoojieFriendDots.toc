@@ -2,7 +2,7 @@
 ## Title: |cFFFF8DA1Boojie Friend Dots|r
 ## Author: SilverRavyn
 ## Notes: Simple friend dots and login/logout notifications.
-## Version: 0.3.6
+## Version: 0.3.7
 ## Category: Quality of Life
 ## IconTexture: Interface\AddOns\BoojieFriendDots\BoojieFriendDotsDot.tga
 ## SavedVariables: BoojieFriendDotsDB

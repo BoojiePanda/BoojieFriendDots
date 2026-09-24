@@ -121,8 +121,46 @@ local function AddChatMessage(text)
     frame:AddMessage("|cff66ccffBoojieFriendDots:|r " .. text)
 end
 
-local function SendNotice(name, online)
-    name = name and Ambiguate(name, "short") or "Friend"
+local function GetClassToken(className)
+    className = Trim(className)
+    if className == "" then
+        return nil
+    end
+
+    for classToken, localizedName in pairs(LOCALIZED_CLASS_NAMES_MALE or {}) do
+        if localizedName == className then
+            return classToken
+        end
+    end
+    for classToken, localizedName in pairs(LOCALIZED_CLASS_NAMES_FEMALE or {}) do
+        if localizedName == className then
+            return classToken
+        end
+    end
+end
+
+local function ColorizeName(name, classToken)
+    local colors = CUSTOM_CLASS_COLORS or RAID_CLASS_COLORS
+    local color = classToken and colors and colors[classToken]
+    if not color then
+        return name
+    end
+
+    local colorCode = color.colorStr
+    if not colorCode then
+        colorCode = string.format(
+            "ff%02x%02x%02x",
+            math.floor(color.r * 255 + 0.5),
+            math.floor(color.g * 255 + 0.5),
+            math.floor(color.b * 255 + 0.5)
+        )
+    end
+    return "|c" .. colorCode .. name .. "|r"
+end
+
+local function SendNotice(name, online, classToken)
+    name = Trim(name)
+    name = name ~= "" and Ambiguate(name, "short") or "Unknown friend"
     local key = name:lower() .. (online and ":1" or ":0")
     local now = GetTime()
     local previous = recentNotices[key]
@@ -130,7 +168,7 @@ local function SendNotice(name, online)
         return
     end
     recentNotices[key] = now
-    AddChatMessage(name .. (online and " logged in." or " logged out."))
+    AddChatMessage(ColorizeName(name, classToken) .. (online and " logged in." or " logged out."))
 end
 
 local function IsFriendUnit(unit)
@@ -335,7 +373,10 @@ local function BuildWoWSnapshot()
     for i = 1, C_FriendList.GetNumFriends() do
         local info = C_FriendList.GetFriendInfoByIndex(i)
         if info and info.name then
-            snapshot[info.name] = info.connected and true or false
+            snapshot[info.name] = {
+                online = info.connected and true or false,
+                classToken = GetClassToken(info.className),
+            }
         end
     end
     return snapshot
@@ -345,10 +386,10 @@ local function UpdateWoWFriends(notify)
     local newSnapshot = BuildWoWSnapshot()
 
     if notify then
-        for name, online in pairs(newSnapshot) do
+        for name, state in pairs(newSnapshot) do
             local old = wowSnapshot[name]
-            if old ~= nil and old ~= online then
-                SendNotice(name, online)
+            if old and old.online ~= state.online then
+                SendNotice(name, state.online, state.classToken or old.classToken)
             end
         end
     end
@@ -370,7 +411,16 @@ local function BuildBNetSnapshot()
                 local game = C_BattleNet.GetFriendGameAccountInfo(friendIndex, gameIndex)
                 if game and game.isOnline and not game.isAppearOffline and game.clientProgram == BNET_CLIENT_WOW then
                     local key = tostring(game.gameAccountID or game.playerGuid or gameIndex)
-                    games[key] = game.characterName or account.accountName or "Battle.net Friend"
+                    local characterName = Trim(game.characterName)
+                    local accountName = Trim(account.accountName)
+                    local battleTag = Trim(account.battleTag)
+                    games[key] = {
+                        name = characterName ~= "" and characterName
+                            or accountName ~= "" and accountName
+                            or battleTag ~= "" and battleTag
+                            or "Unknown Battle.net friend",
+                        classToken = GetClassToken(game.className),
+                    }
                 end
             end
 
@@ -388,17 +438,17 @@ local function UpdateBNetFriends(notify)
         for accountID, newGames in pairs(newSnapshot) do
             local oldGames = bnetSnapshot[accountID]
             if oldGames then
-                for gameID, oldName in pairs(oldGames) do
+                for gameID, oldGame in pairs(oldGames) do
                     if not newGames[gameID] then
-                        SendNotice(oldName, false)
+                        SendNotice(oldGame.name, false, oldGame.classToken)
                     end
                 end
-                for gameID, newName in pairs(newGames) do
+                for gameID, newGame in pairs(newGames) do
                     if not oldGames[gameID] then
-                        SendNotice(newName, true)
-                    elseif oldGames[gameID] ~= newName then
-                        SendNotice(oldGames[gameID], false)
-                        SendNotice(newName, true)
+                        SendNotice(newGame.name, true, newGame.classToken)
+                    elseif oldGames[gameID].name ~= newGame.name then
+                        SendNotice(oldGames[gameID].name, false, oldGames[gameID].classToken)
+                        SendNotice(newGame.name, true, newGame.classToken)
                     end
                 end
             end
