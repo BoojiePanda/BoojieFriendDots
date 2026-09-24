@@ -10,6 +10,7 @@ BoojieFriendDots is a lightweight World of Warcraft addon that highlights friend
 - Adjustable dot size
 - Displays WoW and Battle.net friend login/logout notifications
 - Shows friend names in their class colors in login/logout notifications
+- Uses BattleTags for friends who are online outside World of Warcraft
 - Sends notifications to your chosen chat window
 - Optional minimap button for opening settings
 - Optional ElvUI skin support

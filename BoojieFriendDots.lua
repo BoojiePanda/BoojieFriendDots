@@ -409,17 +409,24 @@ local function BuildBNetSnapshot()
 
             for gameIndex = 1, gameCount do
                 local game = C_BattleNet.GetFriendGameAccountInfo(friendIndex, gameIndex)
-                if game and game.isOnline and not game.isAppearOffline and game.clientProgram == BNET_CLIENT_WOW then
+                if game and game.isOnline and not game.isAppearOffline then
                     local key = tostring(game.gameAccountID or game.playerGuid or gameIndex)
                     local characterName = Trim(game.characterName)
                     local accountName = Trim(account.accountName)
                     local battleTag = Trim(account.battleTag)
+                    local isWoW = game.clientProgram == BNET_CLIENT_WOW
+                    local displayName
+                    if isWoW then
+                        displayName = characterName ~= "" and characterName or accountName
+                    else
+                        displayName = battleTag ~= "" and battleTag or accountName
+                    end
+                    if displayName == "" then
+                        displayName = battleTag ~= "" and battleTag or "Unknown Battle.net friend"
+                    end
                     games[key] = {
-                        name = characterName ~= "" and characterName
-                            or accountName ~= "" and accountName
-                            or battleTag ~= "" and battleTag
-                            or "Unknown Battle.net friend",
-                        classToken = GetClassToken(game.className),
+                        name = displayName,
+                        classToken = isWoW and GetClassToken(game.className) or nil,
                     }
                 end
             end
