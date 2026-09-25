@@ -41,13 +41,17 @@ You can configure:
 
 ## Installation
 
-1. Download or clone this repository.
+1. Download the zip file and unarchive.
 2. Place the `BoojieFriendDots` folder inside:
 
    `World of Warcraft/_retail_/Interface/AddOns/`
 
-3. Enable BoojieFriendDots from the AddOns menu on the character-selection screen.
-4. Log in or type `/reload`.
+3: Ensure it is properly installed by checking:
+
+     `World of Warcraft/_retail_/Interface/AddOns/BoojieFriendDots/BoojieFriendDots.toc`
+
+4. Enable BoojieFriendDots from the AddOns menu on the character-selection screen.
+5. Log in or type `/reload`.
 
 ## Author
 
