@@ -1,56 +1,43 @@
-# BoojieFriendDots
+# Boojie Friend Dots
 
-BoojieFriendDots is a lightweight World of Warcraft addon that highlights friends in your party or raid with customizable dots on the minimap and world map.
+Boojie Friend Dots highlights grouped friends with customizable dots on the World of Warcraft minimap and world map.
 
 ## Features
 
-- Shows grouped WoW and Battle.net friends on the minimap and world map
-- Supports both parties and raids
-- Uses class-colored dots or a custom color
+- Minimap and world-map dots for grouped WoW and Battle.net friends
+- Party and raid support
+- Class-colored dots or a custom color
 - Adjustable dot size
-- Displays WoW and Battle.net friend login/logout notifications
-- Shows friend names in their class colors in login/logout notifications
-- Uses BattleTags for friends who are online outside World of Warcraft
-- Sends notifications to your chosen chat window
-- Optional minimap button for opening settings
-- Optional ElvUI skin support
-- Saves settings between sessions
+- WoW and Battle.net friend login and logout notifications
+- Class-colored friend names and BattleTags in notifications
+- Configurable notification chat window
+- LibDataBroker minimap button with a visibility setting
+- Saved appearance and window settings
 
 ## Important
 
-Friends must be in your party or raid for their map dots to appear. They do not need to have BoojieFriendDots installed.
+Friends must be in your party or raid for their map dots to appear. They do not need Boojie Friend Dots installed.
 
-The addon only displays a dot when World of Warcraft provides a valid position for that group member on the current map.
+A dot can only be displayed when World of Warcraft provides a valid position for that group member on the current map.
 
 ## Settings
 
-Open the settings window by:
+Open Settings with the minimap button, `/bfd`, `/boojiefrienddots`, or `Settings > AddOns > Boojie Friend Dots`.
 
-- Clicking the BoojieFriendDots minimap button
-- Typing `/boojiefrienddots`
-- Typing `/bfd`
-- Opening BoojieFriendDots from WoW's AddOns settings
-
-You can configure:
-
-- Class colors
-- Custom dot color
-- Dot size
-- Notification chat window
-- Minimap button visibility
+You can configure class colors, the custom dot color, dot size, notification chat window, and minimap-button visibility. The shared `/rl` command reloads the interface.
 
 ## Installation
 
-1. Download the zip file and unarchive.
+1. Download the zip file and unarchive it.
 2. Place the `BoojieFriendDots` folder inside:
 
    `World of Warcraft/_retail_/Interface/AddOns/`
 
-3: Ensure it is properly installed by checking:
+3. Ensure it is properly installed by checking:
 
-     `World of Warcraft/_retail_/Interface/AddOns/BoojieFriendDots/BoojieFriendDots.toc`
+   `World of Warcraft/_retail_/Interface/AddOns/BoojieFriendDots/BoojieFriendDots.toc`
 
-4. Enable BoojieFriendDots from the AddOns menu on the character-selection screen.
+4. Enable Boojie Friend Dots from the AddOns menu on the character-selection screen.
 5. Log in or type `/reload`.
 
 ## Author
