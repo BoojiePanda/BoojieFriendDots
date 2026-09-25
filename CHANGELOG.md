@@ -7,7 +7,7 @@
 - Added the `/bfd` shortcut where it is easy to find at the top of the window.
 - Replaced the old home-grown minimap button with proper LibDataBroker and LibDBIcon support, so WindTools can tuck it neatly into its minimap button bar.
 - Retired the old icon artwork and swept away the minimap-button code it no longer needed.
-- Existing preferences—including the minimap-button toggle and saved window position—will carry forward automatically.
+- Existing preferences, including the minimap-button toggle and saved window position, will carry forward automatically.
 
 ## 0.3.8 - September 24, 2026
 
