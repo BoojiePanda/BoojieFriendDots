@@ -1,6 +1,11 @@
 local ADDON_NAME = ...
+local TITLE = "Boojie Friend Dots"
+local VERSION = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "0.3.9"
 local DOT_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsMarker.tga"
-local ADDON_ICON_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsDot.tga"
+local ADDON_ICON_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsBFDIcon.png"
+local LDB_NAME = "BoojieFriendDots"
+local PINK_HEX = "FFFF8DA1"
+local PINK_R, PINK_G, PINK_B = 1, 0.553, 0.631
 local UPDATE_INTERVAL = 0.10
 local MIN_DOT_SIZE = 4
 local MAX_DOT_SIZE = 40
@@ -20,7 +25,7 @@ local defaults = {
     size = 14,
     chatWindow = "General",
     showMinimapButton = true,
-    minimapAngle = -135,
+    minimap = { minimapPos = 225 },
     settingsPosition = {
         point = "CENTER",
         relativePoint = "CENTER",
@@ -36,7 +41,7 @@ local recentNotices = {}
 local minimapDots = {}
 local worldMapDots = {}
 local settingsFrame
-local minimapButton
+local ldbIcon
 local sizeSlider
 local sizeEditBox
 local chatEditBox
@@ -67,9 +72,15 @@ local function CopyDefaults()
     if BoojieFriendDotsDB.showMinimapButton == nil then
         BoojieFriendDotsDB.showMinimapButton = defaults.showMinimapButton
     end
-    if type(BoojieFriendDotsDB.minimapAngle) ~= "number" then
-        BoojieFriendDotsDB.minimapAngle = defaults.minimapAngle
+    if type(BoojieFriendDotsDB.minimap) ~= "table" then
+        BoojieFriendDotsDB.minimap = {
+            minimapPos = tonumber(BoojieFriendDotsDB.minimapAngle) or defaults.minimap.minimapPos,
+        }
     end
+    if type(BoojieFriendDotsDB.minimap.minimapPos) ~= "number" then
+        BoojieFriendDotsDB.minimap.minimapPos = defaults.minimap.minimapPos
+    end
+    BoojieFriendDotsDB.minimapAngle = nil
 
     BoojieFriendDotsDB.settingsPosition = BoojieFriendDotsDB.settingsPosition or {}
     local position = BoojieFriendDotsDB.settingsPosition
@@ -522,8 +533,37 @@ end
 local function CreateLabel(parent, text, x, y)
     local label = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     label:SetPoint("TOPLEFT", x, y)
+    label:SetTextColor(PINK_R, PINK_G, PINK_B)
     label:SetText(text)
     return label
+end
+
+local BACKDROP = {
+    bgFile = "Interface/Buttons/WHITE8X8",
+    edgeFile = "Interface/Buttons/WHITE8X8",
+    edgeSize = 1,
+    insets = { left = 1, right = 1, top = 1, bottom = 1 },
+}
+
+local function ApplyBackdrop(frame, alpha)
+    frame:SetBackdrop(BACKDROP)
+    frame:SetBackdropColor(0, 0, 0, alpha or 1)
+    frame:SetBackdropBorderColor(PINK_R, PINK_G, PINK_B, 1)
+end
+
+local function SkinButton(button)
+    ApplyBackdrop(button, 1)
+    button:SetNormalFontObject("GameFontHighlight")
+    button:SetHighlightTexture("Interface/Buttons/WHITE8X8")
+    button:GetHighlightTexture():SetVertexColor(PINK_R, PINK_G, PINK_B, 0.22)
+    button:SetPushedTexture("Interface/Buttons/WHITE8X8")
+    button:GetPushedTexture():SetVertexColor(PINK_R, PINK_G, PINK_B, 0.35)
+end
+
+local function SkinEditBox(editBox)
+    editBox:SetFontObject("GameFontHighlight")
+    editBox:SetTextInsets(8, 8, 0, 0)
+    ApplyBackdrop(editBox, 1)
 end
 
 local function SaveSettingsPosition()
@@ -541,45 +581,20 @@ local function SaveSettingsPosition()
 end
 
 local function UpdateMinimapButtonVisibility()
-    if not minimapButton or not db then
+    if not ldbIcon or not db then
         return
     end
 
+    db.minimap.hide = not db.showMinimapButton
     if db.showMinimapButton then
-        minimapButton:Show()
+        ldbIcon:Show(LDB_NAME)
     else
-        minimapButton:Hide()
-    end
-end
-
-local function ApplyElvUISkin(frame, classCheck, colorButton, slider, sizeBox, chatBox, minimapCheck)
-    if not _G.ElvUI then
-        return
-    end
-
-    local E = unpack(_G.ElvUI)
-    local S = E and E:GetModule("Skins", true)
-    if not S then
-        return
-    end
-
-    S:HandleFrame(frame, true)
-    S:HandleCheckBox(classCheck)
-    S:HandleButton(colorButton)
-    S:HandleSliderFrame(slider)
-    S:HandleEditBox(sizeBox)
-    S:HandleEditBox(chatBox)
-    S:HandleCheckBox(minimapCheck)
-
-    if colorSwatch then
-        colorSwatch:ClearAllPoints()
-        colorSwatch:SetPoint("TOPLEFT", colorButton, "TOPLEFT", 4, -4)
-        colorSwatch:SetPoint("BOTTOMRIGHT", colorButton, "BOTTOMRIGHT", -4, 4)
+        ldbIcon:Hide(LDB_NAME)
     end
 end
 
 local function CreateSettingsFrame()
-    local frame = CreateFrame("Frame", "BoojieFriendDotsSettingsFrame", UIParent, "BasicFrameTemplateWithInset")
+    local frame = CreateFrame("Frame", "BoojieFriendDotsSettingsFrame", UIParent, "BackdropTemplate")
     UISpecialFrames[#UISpecialFrames + 1] = "BoojieFriendDotsSettingsFrame"
     frame:SetSize(430, 350)
     frame:SetFrameStrata("FULLSCREEN_DIALOG")
@@ -598,6 +613,7 @@ local function CreateSettingsFrame()
         self:StopMovingOrSizing()
         SaveSettingsPosition()
     end)
+    ApplyBackdrop(frame, 0.98)
 
     frame:ClearAllPoints()
     frame:SetPoint(
@@ -609,11 +625,25 @@ local function CreateSettingsFrame()
     )
 
     frame:Hide()
-    frame.TitleText:SetText("Boojie Friend Dots")
     settingsFrame = frame
 
+    local title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOPLEFT", 18, -17)
+    title:SetText("|c" .. PINK_HEX .. TITLE .. "|r  |cffaaaaaav" .. VERSION .. "|r")
+
+    local closeButton = CreateFrame("Button", nil, frame, "BackdropTemplate")
+    closeButton:SetSize(24, 24)
+    closeButton:SetPoint("TOPRIGHT", -10, -10)
+    closeButton:SetText("X")
+    SkinButton(closeButton)
+    closeButton:SetScript("OnClick", function() frame:Hide() end)
+
+    local commandLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    commandLabel:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -7)
+    commandLabel:SetText("Open this window: |c" .. PINK_HEX .. "/bfd|r")
+
     local classCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
-    classCheck:SetPoint("TOPLEFT", 20, -48)
+    classCheck:SetPoint("TOPLEFT", 14, -73)
     classCheck:SetChecked(db.useClassColors)
     local classLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     classLabel:SetPoint("LEFT", classCheck, "RIGHT", 3, 0)
@@ -623,10 +653,11 @@ local function CreateSettingsFrame()
         RefreshDots()
     end)
 
-    CreateLabel(frame, "Custom color", 22, -92)
-    local colorButton = CreateFrame("Button", nil, frame)
+    CreateLabel(frame, "Custom color", 22, -112)
+    local colorButton = CreateFrame("Button", nil, frame, "BackdropTemplate")
     colorButton:SetSize(28, 22)
-    colorButton:SetPoint("TOPLEFT", 126, -85)
+    colorButton:SetPoint("TOPLEFT", 126, -105)
+    ApplyBackdrop(colorButton, 1)
     local swatch = colorButton:CreateTexture(nil, "ARTWORK")
     swatch:SetAllPoints()
     swatch:SetColorTexture(db.color.r, db.color.g, db.color.b, 1)
@@ -634,9 +665,9 @@ local function CreateSettingsFrame()
     colorButton:SetScript("OnClick", OpenColorPicker)
     colorSwatch = swatch
 
-    CreateLabel(frame, "Dot size", 22, -132)
+    CreateLabel(frame, "Dot size", 22, -152)
     local slider = CreateFrame("Slider", "BoojieFriendDotsSizeSlider", frame, "OptionsSliderTemplate")
-    slider:SetPoint("TOPLEFT", 88, -126)
+    slider:SetPoint("TOPLEFT", 88, -146)
     slider:SetWidth(220)
     slider:SetMinMaxValues(MIN_DOT_SIZE, MAX_DOT_SIZE)
     slider:SetValueStep(1)
@@ -650,13 +681,14 @@ local function CreateSettingsFrame()
     end)
     sizeSlider = slider
 
-    local sizeBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    local sizeBox = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
     sizeBox:SetSize(48, 24)
     sizeBox:SetPoint("LEFT", slider, "RIGHT", 18, 0)
     sizeBox:SetAutoFocus(false)
     sizeBox:SetNumeric(true)
     sizeBox:SetMaxLetters(2)
     sizeBox:SetJustifyH("CENTER")
+    SkinEditBox(sizeBox)
     sizeBox:SetText(db.size)
     sizeBox:SetScript("OnEnterPressed", function(self)
         SetDotSize(self:GetText(), self)
@@ -669,12 +701,13 @@ local function CreateSettingsFrame()
     end)
     sizeEditBox = sizeBox
 
-    CreateLabel(frame, "Notification chat window", 22, -185)
-    local chatBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    CreateLabel(frame, "Notification chat window", 22, -205)
+    local chatBox = CreateFrame("EditBox", nil, frame, "BackdropTemplate")
     chatBox:SetSize(220, 24)
-    chatBox:SetPoint("TOPLEFT", 190, -177)
+    chatBox:SetPoint("TOPLEFT", 190, -197)
     chatBox:SetAutoFocus(false)
     chatBox:SetMaxLetters(30)
+    SkinEditBox(chatBox)
     chatBox:SetText(db.chatWindow)
     chatBox:SetScript("OnEnterPressed", function(self)
         SaveChatWindow()
@@ -684,7 +717,7 @@ local function CreateSettingsFrame()
     chatEditBox = chatBox
 
     local minimapCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
-    minimapCheck:SetPoint("TOPLEFT", 20, -226)
+    minimapCheck:SetPoint("TOPLEFT", 14, -246)
     minimapCheck:SetChecked(db.showMinimapButton)
     local minimapLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     minimapLabel:SetPoint("LEFT", minimapCheck, "RIGHT", 3, 0)
@@ -694,11 +727,9 @@ local function CreateSettingsFrame()
         UpdateMinimapButtonVisibility()
     end)
 
-    local commandLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    commandLabel:SetPoint("TOPLEFT", 22, -278)
-    commandLabel:SetText("Open settings: /boojiefrienddots or /bfd")
-
-    ApplyElvUISkin(frame, classCheck, colorButton, slider, sizeBox, chatBox, minimapCheck)
+    local help = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
+    help:SetPoint("TOPLEFT", 22, -294)
+    help:SetText("Friends appear as dots on your minimap and world map while grouped.")
 end
 
 local function ShowSettings()
@@ -730,11 +761,11 @@ local function RegisterBlizzardSettings()
     local icon = panel:CreateTexture(nil, "ARTWORK")
     icon:SetSize(128, 128)
     icon:SetPoint("TOP", 0, -28)
-    icon:SetTexture("Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsSettingsIcon.png")
+    icon:SetTexture(ADDON_ICON_TEXTURE)
 
     local title = panel:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     title:SetPoint("TOP", icon, "BOTTOM", 0, -12)
-    title:SetText("Boojie Friend Dots")
+    title:SetText("|c" .. PINK_HEX .. TITLE .. "|r  |cffaaaaaav" .. VERSION .. "|r")
 
     local description = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
     description:SetPoint("TOP", title, "BOTTOM", 0, -10)
@@ -749,7 +780,7 @@ local function RegisterBlizzardSettings()
         edgeSize = 1,
     })
     button:SetBackdropColor(0.055, 0.055, 0.065, 0.96)
-    button:SetBackdropBorderColor(0.45, 0.45, 0.48, 1)
+    button:SetBackdropBorderColor(PINK_R, PINK_G, PINK_B, 1)
     local buttonText = button:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     buttonText:SetPoint("CENTER")
     buttonText:SetText("Open Boojie Friend Dots")
@@ -776,68 +807,21 @@ local function RegisterBlizzardSettings()
 end
 
 local function CreateMinimapButton()
-    local button = CreateFrame("Button", "BoojieFriendDotsMinimapButton", Minimap)
-    button:SetSize(30, 30)
-    button:RegisterForClicks("LeftButtonUp")
-    button:RegisterForDrag("LeftButton")
-    local function Position()
-        local radius = (Minimap:GetWidth() * 0.5) + 10
-        local radians = math.rad(db.minimapAngle)
-        button:ClearAllPoints()
-        button:SetPoint("CENTER", Minimap, "CENTER", math.cos(radians) * radius, math.sin(radians) * radius)
-    end
-    Position()
+    ldbIcon = LibStub("LibDBIcon-1.0")
+    local launcher = LibStub("LibDataBroker-1.1"):NewDataObject(LDB_NAME, {
+        type = "launcher",
+        label = TITLE,
+        text = TITLE,
+        icon = ADDON_ICON_TEXTURE,
+        OnClick = ToggleSettings,
+        OnTooltipShow = function(tooltip)
+            tooltip:AddLine(TITLE, PINK_R, PINK_G, PINK_B)
+            tooltip:AddLine("Click to open or close.", 1, 1, 1)
+        end,
+    })
 
-    local icon = button:CreateTexture(nil, "ARTWORK")
-    icon:SetSize(18, 18)
-    icon:SetPoint("CENTER")
-    icon:SetTexture(ADDON_ICON_TEXTURE)
-    button.icon = icon
-
-    button:SetSize(31, 31); button:SetFrameStrata("MEDIUM"); button:SetFrameLevel(8)
-    button:SetHitRectInsets(-6, -6, -6, -6)
-    local background = button:CreateTexture(nil, "BACKGROUND")
-    background:SetTexture(136467); background:SetSize(24, 24); background:SetPoint("CENTER")
-    local border = button:CreateTexture(nil, "OVERLAY")
-    border:SetTexture(136430); border:SetSize(50, 50); border:SetPoint("TOPLEFT")
-    button.background, button.border = background, border
-    local function SyncPresentation()
-        local onMinimap = button:GetParent() == Minimap
-        background:SetShown(onMinimap)
-        border:SetShown(onMinimap)
-    end
-    SyncPresentation()
-    hooksecurefunc(button, "SetParent", SyncPresentation)
-
-    button:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-    button:SetScript("OnClick", function() if not button._bcsJustDragged then ToggleSettings() end end)
-    button:SetScript("OnDragStart", function(self)
-        self:SetScript("OnUpdate", function()
-            local cursorX, cursorY = GetCursorPosition()
-            local scale = Minimap:GetEffectiveScale()
-            local centerX, centerY = Minimap:GetCenter()
-            if centerX and centerY then
-                db.minimapAngle = math.deg(math.atan2((cursorY / scale) - centerY, (cursorX / scale) - centerX))
-                Position()
-            end
-        end)
-    end)
-    button:SetScript("OnDragStop", function(self)
-        self:SetScript("OnUpdate", nil); self._bcsJustDragged = true
-        Position()
-        C_Timer.After(0, function() self._bcsJustDragged = nil end)
-    end)
-    button:SetScript("OnEnter", function(self)
-        local mapX = Minimap:GetCenter()
-        GameTooltip:SetOwner(Minimap, mapX and mapX < (UIParent:GetWidth() * 0.5) and "ANCHOR_RIGHT" or "ANCHOR_LEFT")
-        GameTooltip:SetText("BoojieFriendDots")
-        GameTooltip:AddLine("Click to open settings.", 1, 1, 1)
-        GameTooltip:Show()
-    end)
-    button:SetScript("OnLeave", GameTooltip_Hide)
-
-    minimapButton = button
-    UpdateMinimapButtonVisibility()
+    db.minimap.hide = not db.showMinimapButton
+    ldbIcon:Register(LDB_NAME, launcher, db.minimap)
 end
 
 SLASH_BOOJIEFRIENDDOTS1 = "/boojiefrienddots"
