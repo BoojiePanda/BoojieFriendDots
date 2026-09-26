@@ -1,6 +1,6 @@
 local ADDON_NAME = ...
 local TITLE = "Boojie Friend Dots"
-local VERSION = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or "0.3.9"
+local VERSION = C_AddOns.GetAddOnMetadata(ADDON_NAME, "Version") or ""
 local DOT_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsMarker.tga"
 local ADDON_ICON_TEXTURE = "Interface\\AddOns\\BoojieFriendDots\\BoojieFriendDotsBFDIcon.png"
 local LDB_NAME = "BoojieFriendDots"
@@ -9,6 +9,13 @@ local PINK_R, PINK_G, PINK_B = 1, 0.553, 0.631
 local UPDATE_INTERVAL = 0.10
 local MIN_DOT_SIZE = 4
 local MAX_DOT_SIZE = 40
+local LOGIN_SOUND_FILES = {
+    [20] = "Interface\\AddOns\\BoojieFriendDots\\Sounds\\FriendLogin20.ogg",
+    [40] = "Interface\\AddOns\\BoojieFriendDots\\Sounds\\FriendLogin40.ogg",
+    [60] = "Interface\\AddOns\\BoojieFriendDots\\Sounds\\FriendLogin60.ogg",
+    [80] = "Interface\\AddOns\\BoojieFriendDots\\Sounds\\FriendLogin80.ogg",
+    [100] = "Interface\\AddOns\\BoojieFriendDots\\Sounds\\FriendLogin100.ogg",
+}
 
 local function GetMetadata(field)
     if C_AddOns and C_AddOns.GetAddOnMetadata then
@@ -24,6 +31,8 @@ local defaults = {
     color = { r = 0.20, g = 0.85, b = 1.00 },
     size = 14,
     chatWindow = "General",
+    loginSoundEnabled = true,
+    loginSoundVolume = 100,
     showMinimapButton = true,
     minimap = { minimapPos = 225 },
     settingsPosition = {
@@ -69,6 +78,16 @@ local function CopyDefaults()
     if type(BoojieFriendDotsDB.chatWindow) ~= "string" or BoojieFriendDotsDB.chatWindow == "" then
         BoojieFriendDotsDB.chatWindow = defaults.chatWindow
     end
+    if BoojieFriendDotsDB.loginSoundEnabled == nil then
+        BoojieFriendDotsDB.loginSoundEnabled = defaults.loginSoundEnabled
+    end
+    if type(BoojieFriendDotsDB.loginSoundVolume) ~= "number" then
+        BoojieFriendDotsDB.loginSoundVolume = defaults.loginSoundVolume
+    end
+    BoojieFriendDotsDB.loginSoundVolume = math.max(
+        20,
+        math.min(100, math.floor(BoojieFriendDotsDB.loginSoundVolume / 20 + 0.5) * 20)
+    )
     if BoojieFriendDotsDB.showMinimapButton == nil then
         BoojieFriendDotsDB.showMinimapButton = defaults.showMinimapButton
     end
@@ -169,6 +188,17 @@ local function ColorizeName(name, classToken)
     return "|c" .. colorCode .. name .. "|r"
 end
 
+local function PlayLoginSound()
+    if not db.loginSoundEnabled then
+        return
+    end
+
+    local soundFile = LOGIN_SOUND_FILES[db.loginSoundVolume]
+    if soundFile then
+        PlaySoundFile(soundFile, "Master")
+    end
+end
+
 local function SendNotice(name, online, classToken)
     name = Trim(name)
     name = name ~= "" and Ambiguate(name, "short") or "Unknown friend"
@@ -180,6 +210,9 @@ local function SendNotice(name, online, classToken)
     end
     recentNotices[key] = now
     AddChatMessage(ColorizeName(name, classToken) .. (online and " logged in." or " logged out."))
+    if online then
+        PlayLoginSound()
+    end
 end
 
 local function IsFriendUnit(unit)
@@ -596,7 +629,7 @@ end
 local function CreateSettingsFrame()
     local frame = CreateFrame("Frame", "BoojieFriendDotsSettingsFrame", UIParent, "BackdropTemplate")
     UISpecialFrames[#UISpecialFrames + 1] = "BoojieFriendDotsSettingsFrame"
-    frame:SetSize(430, 350)
+    frame:SetSize(430, 440)
     frame:SetFrameStrata("FULLSCREEN_DIALOG")
     frame:SetToplevel(true)
     frame:SetClampedToScreen(true)
@@ -716,8 +749,46 @@ local function CreateSettingsFrame()
     chatBox:SetScript("OnEditFocusLost", SaveChatWindow)
     chatEditBox = chatBox
 
+    local soundSlider
+    local soundCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+    soundCheck:SetPoint("TOPLEFT", 14, -246)
+    soundCheck:SetChecked(db.loginSoundEnabled)
+    local soundCheckLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    soundCheckLabel:SetPoint("LEFT", soundCheck, "RIGHT", 3, 0)
+    soundCheckLabel:SetText("Play friend login sound")
+    soundCheck:SetScript("OnClick", function(self)
+        db.loginSoundEnabled = self:GetChecked() and true or false
+        soundSlider:EnableMouse(db.loginSoundEnabled)
+        soundSlider:SetAlpha(db.loginSoundEnabled and 1 or 0.45)
+    end)
+
+    soundSlider = CreateFrame("Slider", "BoojieFriendDotsSoundVolumeSlider", frame, "OptionsSliderTemplate")
+    soundSlider:SetPoint("TOPLEFT", 88, -292)
+    soundSlider:SetWidth(220)
+    soundSlider:SetMinMaxValues(20, 100)
+    soundSlider:SetValueStep(20)
+    soundSlider:SetObeyStepOnDrag(true)
+    soundSlider:SetValue(db.loginSoundVolume)
+    _G[soundSlider:GetName() .. "Low"]:SetText("20%")
+    _G[soundSlider:GetName() .. "High"]:SetText("100%")
+    _G[soundSlider:GetName() .. "Text"]:SetText("Login sound volume: " .. db.loginSoundVolume .. "%")
+    soundSlider:SetScript("OnValueChanged", function(self, value)
+        value = math.max(20, math.min(100, math.floor(value / 20 + 0.5) * 20))
+        db.loginSoundVolume = value
+        _G[self:GetName() .. "Text"]:SetText("Login sound volume: " .. value .. "%")
+    end)
+    soundSlider:EnableMouse(db.loginSoundEnabled)
+    soundSlider:SetAlpha(db.loginSoundEnabled and 1 or 0.45)
+
+    local testSoundButton = CreateFrame("Button", nil, frame, "BackdropTemplate")
+    testSoundButton:SetSize(82, 24)
+    testSoundButton:SetPoint("LEFT", soundSlider, "RIGHT", 16, 0)
+    testSoundButton:SetText("Test Sound")
+    SkinButton(testSoundButton)
+    testSoundButton:SetScript("OnClick", PlayLoginSound)
+
     local minimapCheck = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
-    minimapCheck:SetPoint("TOPLEFT", 14, -246)
+    minimapCheck:SetPoint("TOPLEFT", 14, -340)
     minimapCheck:SetChecked(db.showMinimapButton)
     local minimapLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     minimapLabel:SetPoint("LEFT", minimapCheck, "RIGHT", 3, 0)
@@ -728,7 +799,7 @@ local function CreateSettingsFrame()
     end)
 
     local help = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-    help:SetPoint("TOPLEFT", 22, -294)
+    help:SetPoint("TOPLEFT", 22, -393)
     help:SetText("Friends appear as dots on your minimap and world map while grouped.")
 end
 

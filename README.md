@@ -10,6 +10,7 @@ Boojie Friend Dots highlights grouped friends with customizable dots on the Worl
 - Adjustable dot size
 - WoW and Battle.net friend login and logout notifications
 - Class-colored friend names and BattleTags in notifications
+- Optional friend login sound with five volume levels
 - Configurable notification chat window
 - LibDataBroker minimap button with a visibility setting
 - Saved appearance and window settings
@@ -24,7 +25,7 @@ A dot can only be displayed when World of Warcraft provides a valid position for
 
 Open Settings with the minimap button, `/bfd`, `/boojiefrienddots`, or `Settings > AddOns > Boojie Friend Dots`.
 
-You can configure class colors, the custom dot color, dot size, notification chat window, and minimap-button visibility. The shared `/rl` command reloads the interface.
+You can configure class colors, the custom dot color, dot size, notification chat window, login sound, login sound volume, and minimap-button visibility. The shared `/rl` command reloads the interface.
 
 ## Installation
 

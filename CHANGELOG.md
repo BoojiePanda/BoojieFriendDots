@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.0 - September 26, 2026
+
+- Added a friendly ding and spoken announcement when a friend logs on.
+- Added an option to turn the login sound on or off.
+- Added five volume levels for the login sound without changing the rest of the game audio.
+- Added a test button so you can hear the selected volume right away.
+
 ## 0.3.9 - September 25, 2026
 
 - Gave Boojie Friend Dots a fresh new look with a crisp black-and-pink **BFD** icon throughout the addon.
